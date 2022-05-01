@@ -21,7 +21,7 @@ class Post {
   int number;
   DateTime createdAt;
   String contentType;
-  List? content;
+  Map? content;
   String? contentHtml;
   DateTime? editedAt;
   bool? canEdit;
@@ -39,7 +39,7 @@ class Post {
     number: json['number'],
     createdAt: DateTime.parse(json['createdAt']),
     contentType: json['contentType'],
-    // content: json.containsKey('content') ? json['content'] : null,
+    content: json.containsKey('content') ? json['content'] : null,
     contentHtml: json.containsKey('contentHtml') ? json['contentHtml'] : null,
     editedAt: json['editedAt'] != null ? DateTime.parse(json['editedAt']) : null,
     canEdit: json['canEdit'],

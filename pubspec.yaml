@@ -41,8 +41,9 @@ dependencies:
   modal_bottom_sheet: ^2.0.1
   intl: ^0.17.0
   flutter_widget_from_html: ^0.8.5
-  sliver_header_delegate: ^0.0.5
   draggable_home: ^1.0.3
+  easy_debounce: ^2.0.2+1
+  scroll_to_index: ^2.1.1
 
 dev_dependencies:
   flutter_test:

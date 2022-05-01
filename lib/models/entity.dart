@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:collection/collection.dart';
 
@@ -83,7 +84,8 @@ class Entity {
   static createModelFromAttribute(String type, Map<String, dynamic> attributes) {
     switch (type) {
       case 'discussions':
-        return Discussion.fromJson(attributes);
+        // There are some special cases where discussion doesn't have the fields.
+        return attributes.containsKey('createdAt') ? Discussion.fromJson(attributes) : attributes;
 
       case 'posts':
         return Post.fromJson(attributes);

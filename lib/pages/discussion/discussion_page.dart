@@ -1,5 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flarum/components/discussion/discussion_tags.dart';
+import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 // import 'package:flutter_html/flutter_html.dart';
@@ -7,8 +7,10 @@ import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:get/get.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
-// import 'package:sliver_header_delegate/sliver_header_delegate.dart';
+import 'package:scroll_to_index/scroll_to_index.dart';
 
+import '../../components/discussion/discussion_tags.dart';
+import '../../components/html_widget_factory.dart';
 import '../../models/entity.dart';
 import 'discussion_controller.dart';
 
@@ -18,150 +20,164 @@ class DiscussionPage extends GetView<DiscussionController> {
 
   @override
   Widget build(BuildContext context) {
+    final AutoScrollController scrollController = AutoScrollController(
+      viewportBoundaryGetter: () => Rect.fromLTRB(0, MediaQuery.of(context).padding.top, 0, MediaQuery.of(context).padding.bottom),
+    );
+
     return Scaffold(
-      body: NestedScrollView(
-        floatHeaderSlivers: true,
-        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-          return <Widget>[
-            /* SliverPersistentHeader(
-              pinned: true,
-              delegate: FlexibleHeaderDelegate(
-                statusBarHeight: MediaQuery.of(context).padding.top,
-                expandedHeight: kToolbarHeight * 2,
-                children: <Widget>[
-                  FlexibleTextItem(
-                    text: controller.discussion().attributes?.title ?? '...',
-                    collapsedStyle: Theme.of(context).appBarTheme.titleTextStyle?.copyWith(
-                      fontWeight: FontWeight.bold
+      body: NotificationListener<ScrollUpdateNotification>(
+        onNotification: (notification) {
+          EasyDebounce.debounce('showHideTitle', const Duration(microseconds: 100), () {
+            controller.showOrHideTitle(notification.metrics.pixels > kToolbarHeight * 1.5);
+          });
+          return false;
+        },
+        child: NestedScrollView(
+          headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            return <Widget>[
+              /* CupertinoSliverNavigationBar(
+                // previousPageTitle: 'Discussions',
+                largeTitle: Obx(() => Text(controller.discussion().attributes?.title ?? '...')),
+              ), */
+              SliverAppBar(
+                forceElevated: innerBoxIsScrolled,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                // elevation: 0.0, // Switch to dynamic
+                floating: true,
+                pinned: true,
+                centerTitle: false,
+                titleSpacing: -30,
+                title: Obx(() => AnimatedOpacity(
+                  opacity: controller.showTitle() ? 1 : 0,
+                  duration: const Duration(milliseconds: 500),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: CachedNetworkImageProvider(controller.user().attributes?.avatarUrl ?? 'http://via.placeholder.com/150x150'),
                     ),
-                    expandedStyle: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
+                    title: Text(controller.discussion().attributes?.title ?? '...',
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    expandedAlignment: Alignment.bottomLeft,
-                    expandedPadding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                  ),
-                ],
-              )
-            ), */
-            CupertinoSliverNavigationBar(
-              // previousPageTitle: 'Discussions',
-              largeTitle: Obx(() => Text(controller.discussion().attributes?.title ?? '...')),
-            ),
-            /* SliverAppBar(
-              forceElevated: innerBoxIsScrolled,
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              // elevation: 0.0,
-              expandedHeight: 200.0, // Switch to dynamic
-              floating: true,
-              pinned: true,
-              // title: Text('12'),
-              flexibleSpace: CustomizableSpaceBar(
-                builder: (BuildContext context, scrollingRate) {
-                  // var top = constraints.biggest.height;
-                  // return FlexibleSpaceBar(
-                  //   // collapseMode: CollapseMode.none,
-                  //   title: AnimatedOpacity(
-                  //     duration: Duration(milliseconds: 300),
-                  //     opacity: top == MediaQuery.of(context).padding.top + kToolbarHeight ? 0 : 1,
-                  //     child: Obx(() => Text(controller.discussion().attributes?.title ?? '...'))
-                  //   ),
-                  // );
-                  return Padding(
-                    padding: EdgeInsets.only(bottom: 8, left: 12 + 40 * scrollingRate),
-                    child: Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Text(controller.discussion().attributes?.title ?? '...',
-                        style: TextStyle(
-                          fontSize: 42 - 18 * scrollingRate,
-                          fontWeight: FontWeight.bold
+                    subtitle: Text(controller.user().attributes?.displayName ?? '[deleted]'),
+                  )),
+                ),
+              ),
+            ];
+          },
+          body: SingleChildScrollView(
+            controller: scrollController,
+            child: FutureBuilder(
+              future: controller.load(),
+              builder: (context, AsyncSnapshot snapshot) {
+                if (snapshot.connectionState == ConnectionState.done) {
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        '${snapshot.error} occurred',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    );
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Container(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Obx(() => Text(controller.discussion().attributes?.title ?? '...',
+                              style: Theme.of(context).textTheme.headline5,
+                            )),
+                            const SizedBox(height: 6.0),
+                            Obx(() => DiscussionTags(controller.discussion().included['tags'],
+                              fontSize: 12,
+                            )),
+                          ],
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ), */
-          ];
-        },
-        body: SingleChildScrollView(
-          child: FutureBuilder(
-            future: controller.load(),
-            builder: (context, AsyncSnapshot snapshot) {
-              if (snapshot.connectionState == ConnectionState.done) {
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      '${snapshot.error} occurred',
-                      style: const TextStyle(fontSize: 18),
-                    ),
+                      ListView.separated(
+                        separatorBuilder: (BuildContext context, int index) => const Divider(
+                          // indent: 8.0,
+                          // endIndent: 8.0,
+                          height: 0,
+                        ),
+                        padding: const EdgeInsets.only(top: 0, bottom: 16.0),
+                        // primary: false,
+                        shrinkWrap: true,
+                        itemCount: controller.discussion().included['posts']?.length ?? 0,
+                        itemBuilder: (context, i) {
+                          Entity post = controller.discussion().included['posts'][i];
+
+                          return AutoScrollTag(
+                            controller: scrollController,
+                            key: ValueKey(i),
+                            index: i,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundImage: CachedNetworkImageProvider(post.included['user']?.attributes?.avatarUrl ?? 'http://via.placeholder.com/150x150'),
+                                  ),
+                                  title: Text(post.included['user']?.attributes.displayName ?? '[deleted]'),
+                                  subtitle: Text(Jiffy(post.attributes.createdAt).fromNow()),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: HtmlWidget(post.attributes.contentHtml ?? '',
+                                    isSelectable: true,
+                                    onTapImage: (src) => print(src),
+                                    onTapUrl: (url) => true,
+                                    factoryBuilder: () => HtmlWidgetFactory(
+                                      onMentionTap: (id) {
+                                        int to = controller.discussion().included['posts'].indexWhere((p) => p.id == id) ?? 0;
+                                        scrollController.scrollToIndex(to,
+                                          preferPosition: AutoScrollPosition.begin,
+                                          duration: const Duration(seconds: 1),
+                                        );
+                                      },
+                                    ),
+                                    customStylesBuilder: (element) {
+                                      // if (element.classes.contains('PostMention')) {
+                                      //   return {
+                                      //     // 'background': '#e7edf3',
+                                      //     // 'color': '#667d99',
+                                      //     // 'font-weight': 'bold',
+                                      //     // 'padding': '2px',
+                                      //     // 'text-decoration': 'none',
+                                      //     // 'border-radius': '4px'
+                                      //   };
+                                      // }
+
+                                      return null;
+                                    },
+                                    customWidgetBuilder: (element) {
+                                      // if (element.classes.contains('PostMention') && element.attributes['data-id'] != null) {
+                                      //   return const SizedBox.shrink();
+                                      // }
+
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                _likes(context, post),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   );
                 }
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Container(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          /* Obx(() => Text(controller.discussion().attributes?.title ?? '...',
-                            style: Theme.of(context).textTheme.headline5,
-                          )),
-                          const SizedBox(height: 6.0), */
-                          Obx(() => DiscussionTags(controller.discussion().included['tags'],
-                            fontSize: 12,
-                          )),
-                        ],
-                      ),
-                    ),
-                    ListView.separated(
-                      separatorBuilder: (BuildContext context, int index) => const Divider(
-                        // indent: 8.0,
-                        // endIndent: 8.0,
-                        height: 0,
-                      ),
-                      padding: const EdgeInsets.only(top: 0, bottom: 16.0),
-                      primary: false,
-                      shrinkWrap: true,
-                      itemCount: controller.discussion().included['posts']?.length ?? 0,
-                      itemBuilder: (context, i) {
-                        Entity post = controller.discussion().included['posts'][i];
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            ListTile(
-                              leading: CircleAvatar(
-                                backgroundImage: CachedNetworkImageProvider(post.included['user']?.attributes?.avatarUrl ?? 'http://via.placeholder.com/150x150'),
-                              ),
-                              title: Text(post.included['user']?.attributes.displayName ?? '[deleted]'),
-                              subtitle: Text(Jiffy(post.attributes.createdAt).fromNow()),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: HtmlWidget(post.attributes.contentHtml ?? '',
-                                isSelectable: true,
-                                onTapImage: (src) => print(src),
-                                onTapUrl: (url) => true,
-                              ),
-                            ),
-                            _likes(context, post),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
+                return const Center(
+                  child: CircularProgressIndicator.adaptive()
                 );
-              }
-
-              return const Center(
-                child: CircularProgressIndicator.adaptive()
-              );
-            },
-          ),
-        )
+              },
+            ),
+          )
+        ),
       ),
     );
   }
