@@ -7,7 +7,8 @@ import 'package:scrolls_to_top/scrolls_to_top.dart';
 import '../routes.dart' as route;
 import 'app_controller.dart';
 import 'home/home_controller.dart';
-import 'home/home_page.dart';
+import 'home/discussions_page.dart';
+import 'home/tags_page.dart';
 import 'settings/settings_page.dart';
 
 class App extends GetView<AppController> {
@@ -43,8 +44,8 @@ class App extends GetView<AppController> {
 
   List<Widget> _buildScreens() {
     return [
-      HomePage(),
-      SettingsPage(),
+      DiscussionsPage(),
+      TagsPage(),
       SettingsPage(),
       SettingsPage(),
       SettingsPage(),

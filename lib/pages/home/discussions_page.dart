@@ -8,7 +8,7 @@ import '../../models/schema.dart';
 import '../../models/entity.dart';
 import 'home_controller.dart';
 
-class HomePage extends GetView<HomeController> {
+class DiscussionsPage extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {

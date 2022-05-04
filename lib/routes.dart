@@ -8,7 +8,8 @@ import 'pages/app_controller.dart';
 import 'pages/discussion/discussion_controller.dart';
 import 'pages/discussion/discussion_page.dart';
 import 'pages/home/home_controller.dart';
-import 'pages/home/home_page.dart';
+import 'pages/home/discussions_page.dart';
+import 'pages/tag/tag_controller.dart';
 
 final pages = [
   GetPage(
@@ -30,7 +31,7 @@ GetPageRoute homePageRoutes(settings) {
     return GetPageRoute(
       routeName: '/',
       settings: settings,
-      page: () => HomePage()
+      page: () => DiscussionsPage()
     );
   }
 

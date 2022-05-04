@@ -6,4 +6,5 @@ import '../../api/discussion_provider.dart';
 
 class HomeController extends GetxController with HasScrollController {
  final DiscussionProvider discussionProvider = Get.find<DiscussionProvider>();
+ final TagProvider tagProvider = Get.find<TagProvider>();
 }
