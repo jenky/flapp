@@ -4,11 +4,13 @@ import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
 class HtmlWidgetFactory extends WidgetFactory {
   HtmlWidgetFactory({
-    this.onMentionTap,
+    this.onPostMentionTap,
+    this.onUserMentionTap,
   }) : super();
 
   // final GestureTapCallback(String )? onMentionTap;
-  final void Function(String?)? onMentionTap;
+  final void Function(String?)? onPostMentionTap;
+  final void Function(String?)? onUserMentionTap;
 
   @override
   void parse(BuildMetadata meta) {
@@ -19,7 +21,7 @@ class HtmlWidgetFactory extends WidgetFactory {
         meta.register(BuildOp(
           onTree: (_, tree) {
             final widget = InkWell(
-              onTap: () => onMentionTap != null ? onMentionTap!(e.attributes['data-id']) : null,
+              onTap: () => onPostMentionTap != null ? onPostMentionTap!(e.attributes['data-id']) : null,
               child: Badge(
                 badgeColor: const Color(0XFFE7EDF3),
                 padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
@@ -34,6 +36,33 @@ class HtmlWidgetFactory extends WidgetFactory {
                       )
                     ),
                   ],
+                ),
+                borderRadius: BorderRadius.circular(4),
+                shape: BadgeShape.square,
+              ),
+            );
+
+            WidgetBit.inline(tree.parent!, widget,
+              alignment: PlaceholderAlignment.middle,
+            ).insertBefore(tree);
+
+            tree.detach();
+          },
+        ));
+      }
+
+      if (e.classes.contains('UserMention')) {
+        meta.register(BuildOp(
+          onTree: (_, tree) {
+            final widget = InkWell(
+              onTap: () => onUserMentionTap != null ? onUserMentionTap!(e.text) : null,
+              child: Badge(
+                badgeColor: const Color(0XFFE7EDF3),
+                padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
+                badgeContent: Text(e.text,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                  )
                 ),
                 borderRadius: BorderRadius.circular(4),
                 shape: BadgeShape.square,

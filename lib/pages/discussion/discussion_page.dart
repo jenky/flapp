@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 // import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
@@ -17,13 +18,17 @@ import 'discussion_controller.dart';
 class DiscussionPage extends GetView<DiscussionController> {
 
   String? get tag => Get.arguments?.id != null ? 'discussion::${Get.arguments.id}' : null;
+  final AutoScrollController scrollController = AutoScrollController(
+    // viewportBoundaryGetter: () => Rect.fromLTRB(0, MediaQuery.of(context).padding.top, 0, MediaQuery.of(context).padding.bottom),
+  );
+
+  static List specialContentTypes = [
+    'discussionStickied',
+    'discussionLocked',
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final AutoScrollController scrollController = AutoScrollController(
-      viewportBoundaryGetter: () => Rect.fromLTRB(0, MediaQuery.of(context).padding.top, 0, MediaQuery.of(context).padding.bottom),
-    );
-
     return Scaffold(
       body: NotificationListener<ScrollUpdateNotification>(
         onNotification: (notification) {
@@ -125,43 +130,12 @@ class DiscussionPage extends GetView<DiscussionController> {
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
-                                  child: HtmlWidget(post.attributes.contentHtml ?? '',
-                                    isSelectable: true,
-                                    onTapImage: (src) => print(src),
-                                    onTapUrl: (url) => true,
-                                    factoryBuilder: () => HtmlWidgetFactory(
-                                      onMentionTap: (id) {
-                                        int to = controller.discussion().included['posts'].indexWhere((p) => p.id == id) ?? 0;
-                                        scrollController.scrollToIndex(to,
-                                          preferPosition: AutoScrollPosition.begin,
-                                          duration: const Duration(seconds: 1),
-                                        );
-                                      },
-                                    ),
-                                    customStylesBuilder: (element) {
-                                      // if (element.classes.contains('PostMention')) {
-                                      //   return {
-                                      //     // 'background': '#e7edf3',
-                                      //     // 'color': '#667d99',
-                                      //     // 'font-weight': 'bold',
-                                      //     // 'padding': '2px',
-                                      //     // 'text-decoration': 'none',
-                                      //     // 'border-radius': '4px'
-                                      //   };
-                                      // }
-
-                                      return null;
-                                    },
-                                    customWidgetBuilder: (element) {
-                                      // if (element.classes.contains('PostMention') && element.attributes['data-id'] != null) {
-                                      //   return const SizedBox.shrink();
-                                      // }
-
-                                      return null;
-                                    },
-                                  ),
+                                  child: _discussionContent(context, post),
                                 ),
+                                const SizedBox(height: 16.0),
+                                _mentions(context, post),
                                 _likes(context, post),
+                                const SizedBox(height: 16.0),
                               ],
                             ),
                           );
@@ -182,20 +156,122 @@ class DiscussionPage extends GetView<DiscussionController> {
     );
   }
 
+  Widget _discussionContent(BuildContext context, Entity post) {
+    if (specialContentTypes.contains(post.attributes.contentType) && post.attributes.content != null) {
+      if (post.attributes.content.containsKey('sticky')) {
+        if (post.attributes.content['sticky']) {
+          return Row(
+            children: [
+              Icon(Icons.push_pin_outlined,
+                color: Colors.red,
+              ),
+              const SizedBox(width: 10),
+              Text('stickied the discussion.',
+                style: TextStyle(
+                  color: Colors.red,
+                ),
+              ),
+            ],
+          );
+        } else {
+          return Row(
+            children: [
+              Icon(Icons.push_pin_outlined,
+                color: Colors.red,
+              ),
+              Text('unstickied the discussion.',
+                style: TextStyle(
+                  color: Colors.red,
+                ),
+              ),
+            ],
+          );
+        }
+      }
+
+      if (post.attributes.content.containsKey('locked')) {
+        if (post.attributes.content['locked']) {
+          return Row(
+            children: [
+              Icon(Icons.lock_outline,
+                color: Color(0xFF888888),
+              ),
+              const SizedBox(width: 10),
+              Text('locked the discussion.',
+                style: TextStyle(
+                  color: Color(0xFF888888),
+                ),
+              ),
+            ],
+          );
+        } else {
+          return Row(
+            children: [
+              Icon(Icons.lock_open_outlined,
+                color: Colors.red,
+              ),
+              Text('unlocked the discussion.',
+                style: TextStyle(
+                  color: Colors.red,
+                ),
+              ),
+            ],
+          );
+        }
+      }
+    }
+
+    return HtmlWidget(post.attributes.contentHtml ?? '',
+      isSelectable: true,
+      onTapImage: (src) => print(src),
+      onTapUrl: (url) => true,
+      factoryBuilder: () => HtmlWidgetFactory(
+        onPostMentionTap: (id) {
+          int to = controller.discussion().included['posts'].indexWhere((p) => p.id == id) ?? 0;
+          scrollController.scrollToIndex(to,
+            preferPosition: AutoScrollPosition.begin,
+            duration: const Duration(seconds: 1),
+          );
+        },
+      ),
+      customStylesBuilder: (element) {
+        // if (element.classes.contains('PostMention')) {
+        //   return {
+        //     // 'background': '#e7edf3',
+        //     // 'color': '#667d99',
+        //     // 'font-weight': 'bold',
+        //     // 'padding': '2px',
+        //     // 'text-decoration': 'none',
+        //     // 'border-radius': '4px'
+        //   };
+        // }
+
+        return null;
+      },
+      customWidgetBuilder: (element) {
+        // if (element.classes.contains('PostMention') && element.attributes['data-id'] != null) {
+        //   return const SizedBox.shrink();
+        // }
+
+        return null;
+      },
+    );
+  }
+
   Widget _likes(BuildContext context, Entity post) {
     if (post.included.containsKey('likes') && post.included['likes'].isNotEmpty) {
       String likes = '';
       if (post.included['likes'].length > 3) {
         List sub = post.included['likes'].sublist(3);
-        likes = post.included['likes'].sublist(0, 3).map((i) => i.attributes.displayName).join(', ') + ' and ${sub.length} others like this';
+        likes = post.included['likes'].sublist(0, 3).map((i) => i.attributes.displayName ?? '[deleted]').join(', ') + ' and ${sub.length} others like this';
       } else {
-        likes = post.included['likes'].map((i) => i.attributes.displayName).join(', ') + ' like this';
+        likes = post.included['likes'].map((i) => i.attributes.displayName ?? '[deleted]').join(', ') + ' like this';
       }
 
       return GestureDetector(
         onTap: () => _showLikes(context, post.included['likes']),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -205,6 +281,41 @@ class DiscussionPage extends GetView<DiscussionController> {
               const SizedBox(width: 5.0),
               Flexible(
                 child: Text(likes,
+                  overflow: TextOverflow.visible,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox();
+  }
+
+  Widget _mentions(BuildContext context, Entity post) {
+    if (post.included.containsKey('mentionedBy') && post.included['mentionedBy'].isNotEmpty) {
+      String mentionedBy = '';
+      if (post.included['mentionedBy'].length > 3) {
+        List sub = post.included['mentionedBy'].sublist(3);
+        mentionedBy = post.included['mentionedBy'].sublist(0, 3).map((i) => i.included['user']?.attributes.displayName ?? '[deleted]').join(', ') + ' and ${sub.length} others replied to this';
+      } else {
+        mentionedBy = post.included['mentionedBy'].map((i) => i.included['user']?.attributes.displayName ?? '[deleted]').join(', ') + ' replied to this';
+      }
+
+      return GestureDetector(
+        onTap: () => _showMentions(context, post.included['mentionedBy']),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Icon(Icons.reply,
+                size: 14.0,
+              ),
+              const SizedBox(width: 5.0),
+              Flexible(
+                child: Text(mentionedBy,
                   overflow: TextOverflow.visible,
                 ),
               ),
@@ -230,6 +341,31 @@ class DiscussionPage extends GetView<DiscussionController> {
               backgroundImage: CachedNetworkImageProvider(user.attributes?.avatarUrl ?? 'http://via.placeholder.com/150x150'),
             ),
             title: Text(user.attributes?.displayName),
+          );
+        }
+      ),
+    );
+  }
+
+  void _showMentions(BuildContext context, List<Entity> posts) {
+    showBarModalBottomSheet(
+      context: context,
+      // useRootNavigator: true,
+      builder: (context) => ListView.builder(
+        itemCount: posts.length,
+        itemBuilder: (context, i) {
+          Entity post = posts[i];
+          return ListTile(
+            isThreeLine: true,
+            leading: CircleAvatar(
+              backgroundImage: CachedNetworkImageProvider(post.included['user']?.attributes.avatarUrl ?? 'http://via.placeholder.com/150x150'),
+            ),
+            title: Text(post.included['user']?.attributes.displayName ?? '[deleted]'),
+            // subtitle: HtmlWidget(post.attributes.contentHtml ?? ''),
+            subtitle: Text(Bidi.stripHtmlIfNeeded(post.attributes.contentHtml ?? ''),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
           );
         }
       ),
