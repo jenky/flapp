@@ -29,7 +29,7 @@ class DiscussionListItem extends StatelessWidget {
     return Container(
       // color: Colors.white,
       child: GestureDetector(
-        onTap: () => Get.toNamed('/d', arguments: entity, id: 1),
+        onTap: () => Get.toNamed('/d', arguments: entity, id: 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[

@@ -61,9 +61,8 @@ class App extends GetView<AppController> {
         activeColorPrimary: CupertinoColors.activeOrange,
         inactiveColorPrimary: CupertinoColors.systemGrey,
         routeAndNavigatorSettings: RouteAndNavigatorSettings(
-          onGenerateRoute: route.homePageRoutes,
-          initialRoute: '/',
-          navigatorKey: Get.nestedKey(1),
+          onGenerateRoute: route.discussionsPageRoutes,
+          navigatorKey: Get.nestedKey(0),
           navigatorObservers: [GetObserver()],
         ),
         onSelectedTabPressWhenNoScreensPushed: () => Get.find<HomeController>().scrollToTop()
@@ -74,6 +73,11 @@ class App extends GetView<AppController> {
         title: ('Tags'),
         activeColorPrimary: CupertinoColors.activeOrange,
         inactiveColorPrimary: CupertinoColors.systemGrey,
+        routeAndNavigatorSettings: RouteAndNavigatorSettings(
+          onGenerateRoute: route.tagsPageRoutes,
+          navigatorKey: Get.nestedKey(1),
+          navigatorObservers: [GetObserver()],
+        ),
         // onSelectedTabPressWhenNoScreensPushed: () {}
       ),
       PersistentBottomNavBarItem(

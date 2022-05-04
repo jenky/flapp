@@ -9,7 +9,9 @@ import 'pages/discussion/discussion_controller.dart';
 import 'pages/discussion/discussion_page.dart';
 import 'pages/home/home_controller.dart';
 import 'pages/home/discussions_page.dart';
+import 'pages/home/tags_page.dart';
 import 'pages/tag/tag_controller.dart';
+import 'pages/tag/tag_page.dart';
 
 final pages = [
   GetPage(
@@ -24,7 +26,7 @@ final pages = [
   ),
 ];
 
-GetPageRoute homePageRoutes(settings) {
+GetPageRoute discussionsPageRoutes(settings) {
   Get.routing.args = settings.arguments;
 
   if (settings.name == '/') {
@@ -43,6 +45,34 @@ GetPageRoute homePageRoutes(settings) {
       binding: BindingsBuilder(() {
         String? tag = settings.arguments is Entity ? 'discussion::${settings.arguments.id}' : null;
         Get.lazyPut<DiscussionController>(() => DiscussionController(),
+          tag: tag,
+        );
+      })
+    );
+  }
+
+  throw 'Route not found.';
+}
+
+GetPageRoute tagsPageRoutes(settings) {
+  Get.routing.args = settings.arguments;
+
+  if (settings.name == '/') {
+    return GetPageRoute(
+      routeName: '/',
+      settings: settings,
+      page: () => TagsPage()
+    );
+  }
+
+  // Use tag for same page navigation
+  if (settings.name == '/t') {
+    return GetPageRoute(
+      settings: settings,
+      page: () => TagPage(),
+      binding: BindingsBuilder(() {
+        String? tag = settings.arguments is Entity ? 'tag::${settings.arguments.id}' : null;
+        Get.lazyPut<TagController>(() => TagController(),
           tag: tag,
         );
       })

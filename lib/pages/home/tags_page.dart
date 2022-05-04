@@ -36,7 +36,7 @@ class TagsPage extends GetView<HomeController> {
               List<Entity> filteredTags = tags.where((t) => !t.attributes.isChild && !t.attributes.isHidden).toList();
 
               return GridView.builder(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: 6,
@@ -45,27 +45,30 @@ class TagsPage extends GetView<HomeController> {
                 itemCount: filteredTags.length,
                 itemBuilder: (context, i) {
                   Entity tag = filteredTags[i];
-                  return Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: HexColor(tag.attributes.color != '' ? tag.attributes.color : '#e7edf3'),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(tag.attributes.name,
-                          style: Theme.of(context).textTheme.headline5?.copyWith(
-                            color: tag.attributes.color != '' ? Colors.white : Colors.black,
+                  return GestureDetector(
+                    onTap: () => Get.toNamed('/t', arguments: tag, id: 1),
+                    child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        color: HexColor(tag.attributes.color != '' ? tag.attributes.color : '#e7edf3'),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(tag.attributes.name,
+                            style: Theme.of(context).textTheme.headline5?.copyWith(
+                              color: tag.attributes.color != '' ? Colors.white : Colors.black,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(tag.attributes.description,
-                          style: TextStyle(
-                            color: tag.attributes.color != '' ? Colors.white : Colors.black,
-                          )
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Text(tag.attributes.description,
+                            style: TextStyle(
+                              color: tag.attributes.color != '' ? Colors.white : Colors.black,
+                            )
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
