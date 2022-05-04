@@ -21,7 +21,7 @@ class Post {
   int number;
   DateTime createdAt;
   String contentType;
-  Map? content;
+  dynamic content;
   String? contentHtml;
   DateTime? editedAt;
   bool? canEdit;

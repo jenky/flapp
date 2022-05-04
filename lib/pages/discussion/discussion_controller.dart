@@ -27,7 +27,7 @@ class DiscussionController extends GetxController {
       var response = await provider.fetchDiscussion(Get.arguments.id);
       if (response.isOk) {
         discussion(response.body!.resource);
-        inspect(discussion.value);
+        // inspect(discussion.value);
       }
     }
   }

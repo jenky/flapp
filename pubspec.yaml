@@ -44,6 +44,7 @@ dependencies:
   draggable_home: ^1.0.3
   easy_debounce: ^2.0.2+1
   scroll_to_index: ^2.1.1
+  url_launcher: ^6.1.0
 
 dev_dependencies:
   flutter_test:

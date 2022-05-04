@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/cupertino.dart';
@@ -9,8 +11,10 @@ import 'package:intl/intl.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../components/discussion/discussion_tags.dart';
+import '../../components/floating_modal.dart';
 import '../../components/html_widget_factory.dart';
 import '../../models/entity.dart';
 import 'discussion_controller.dart';
@@ -22,9 +26,14 @@ class DiscussionPage extends GetView<DiscussionController> {
     // viewportBoundaryGetter: () => Rect.fromLTRB(0, MediaQuery.of(context).padding.top, 0, MediaQuery.of(context).padding.bottom),
   );
 
-  static List specialContentTypes = [
+  static List mapContentTypes = [
     'discussionStickied',
     'discussionLocked',
+  ];
+
+  static List listContentTypes = [
+    'discussionTagged',
+    'discussionRenamed',
   ];
 
   @override
@@ -127,6 +136,7 @@ class DiscussionPage extends GetView<DiscussionController> {
                                   ),
                                   title: Text(post.included['user']?.attributes.displayName ?? '[deleted]'),
                                   subtitle: Text(Jiffy(post.attributes.createdAt).fromNow()),
+                                  onTap: _showUser(context, post.included['user']),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.all(8.0),
@@ -156,8 +166,10 @@ class DiscussionPage extends GetView<DiscussionController> {
     );
   }
 
+  static get specialContentTypes => {...mapContentTypes, ...listContentTypes}.toList();
+
   Widget _discussionContent(BuildContext context, Entity post) {
-    if (specialContentTypes.contains(post.attributes.contentType) && post.attributes.content != null) {
+    if (mapContentTypes.contains(post.attributes.contentType) && post.attributes.content != null) {
       if (post.attributes.content.containsKey('sticky')) {
         if (post.attributes.content['sticky']) {
           return Row(
@@ -224,7 +236,7 @@ class DiscussionPage extends GetView<DiscussionController> {
     return HtmlWidget(post.attributes.contentHtml ?? '',
       isSelectable: true,
       onTapImage: (src) => print(src),
-      onTapUrl: (url) => true,
+      onTapUrl: (url) => launchUrl(Uri.parse(url)),
       factoryBuilder: () => HtmlWidgetFactory(
         onPostMentionTap: (id) {
           int to = controller.discussion().included['posts'].indexWhere((p) => p.id == id) ?? 0;
@@ -263,9 +275,9 @@ class DiscussionPage extends GetView<DiscussionController> {
       String likes = '';
       if (post.included['likes'].length > 3) {
         List sub = post.included['likes'].sublist(3);
-        likes = post.included['likes'].sublist(0, 3).map((i) => i.attributes.displayName ?? '[deleted]').join(', ') + ' and ${sub.length} others like this';
+        likes = post.included['likes'].sublist(0, 3).map((i) => i.attributes.displayName ?? '[deleted]').join(', ') + ' and ${sub.length} others like this.';
       } else {
-        likes = post.included['likes'].map((i) => i.attributes.displayName ?? '[deleted]').join(', ') + ' like this';
+        likes = post.included['likes'].map((i) => i.attributes.displayName ?? '[deleted]').join(', ') + ' like this.';
       }
 
       return GestureDetector(
@@ -298,9 +310,9 @@ class DiscussionPage extends GetView<DiscussionController> {
       String mentionedBy = '';
       if (post.included['mentionedBy'].length > 3) {
         List sub = post.included['mentionedBy'].sublist(3);
-        mentionedBy = post.included['mentionedBy'].sublist(0, 3).map((i) => i.included['user']?.attributes.displayName ?? '[deleted]').join(', ') + ' and ${sub.length} others replied to this';
+        mentionedBy = post.included['mentionedBy'].sublist(0, 3).map((i) => i.included['user']?.attributes.displayName ?? '[deleted]').join(', ') + ' and ${sub.length} others replied to this.';
       } else {
-        mentionedBy = post.included['mentionedBy'].map((i) => i.included['user']?.attributes.displayName ?? '[deleted]').join(', ') + ' replied to this';
+        mentionedBy = post.included['mentionedBy'].map((i) => i.included['user']?.attributes.displayName ?? '[deleted]').join(', ') + ' replied to this.';
       }
 
       return GestureDetector(
@@ -328,8 +340,8 @@ class DiscussionPage extends GetView<DiscussionController> {
     return const SizedBox();
   }
 
-  void _showLikes(BuildContext context, List<Entity> likes) {
-    showBarModalBottomSheet(
+  _showLikes(BuildContext context, List<Entity> likes) {
+    return showBarModalBottomSheet(
       context: context,
       // useRootNavigator: true,
       builder: (context) => ListView.builder(
@@ -347,8 +359,8 @@ class DiscussionPage extends GetView<DiscussionController> {
     );
   }
 
-  void _showMentions(BuildContext context, List<Entity> posts) {
-    showBarModalBottomSheet(
+  _showMentions(BuildContext context, List<Entity> posts) {
+    return showBarModalBottomSheet(
       context: context,
       // useRootNavigator: true,
       builder: (context) => ListView.builder(
@@ -370,5 +382,21 @@ class DiscussionPage extends GetView<DiscussionController> {
         }
       ),
     );
+  }
+
+  _showUser(BuildContext context, Entity? user) {
+    if (user == null) {
+      return;
+    }
+
+    // showFloatingModalBottomSheet(
+    //   context: context,
+    //   builder: (context) => ListTile(
+    //     leading: CircleAvatar(
+    //       backgroundImage: CachedNetworkImageProvider(user.attributes.avatarUrl ?? 'http://via.placeholder.com/150x150'),
+    //     ),
+    //     title: Text(user.attributes.displayName ?? '[deleted]'),
+    //   )
+    // );
   }
 }
